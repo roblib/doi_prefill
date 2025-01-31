@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Drupal\doi_prefill\Form;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\node\Entity\Node;
+use Drupal\taxonomy\Entity\Term;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\doi_prefill\CrossrefApiReader;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Drupal\node\Entity\Node;
-use Drupal\taxonomy\Entity\Term;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 
 /**
  * Provides a DOI Prefill form.
@@ -36,6 +36,9 @@ final class DoiPrepopulateForm extends FormBase {
    * The constructor.
    *
    * @param \Drupal\doi_prefill\CrossrefApiReader $doiApi
+   *   The Api reader.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   The EntityTypeManager.
    */
   public function __construct(CrossrefApiReader $doiApi, EntityTypeManagerInterface $entityTypeManager) {
     $this->doiApi = $doiApi;
@@ -147,12 +150,12 @@ final class DoiPrepopulateForm extends FormBase {
       'title' => $contents['title'][0],
       'field_member_of' => $collection,
       'type' => 'islandora_object',
-      'field_linked_agent' => $typed_relations,
-      'field_publisher' => $contents['publisher'],
+      'field_contributor' => $typed_relations,
+      'field_publisher' => $contents['publisher'] ?? '',
       'field_doi' => $doi,
       'field_genre' => $genre->id(),
-      'field_issue' => $contents['issue'],
-      'field_volume' => $contents['volume'],
+      'field_issue' => $contents['issue'] ?? '',
+      'field_volume' => $contents['volume'] ?? '',
     ]);
 
     // Optional fields.
@@ -171,20 +174,19 @@ final class DoiPrepopulateForm extends FormBase {
     }
 
     // Multivalued fields.
-    $field_edtf_date_issued = [];
-    foreach ($contents['created']['date-parts'] as $date_parts) {
-      $field_edtf_date_issued[] = ['value' => implode('-', $date_parts)];
+    $field_date_issued = [];
+    foreach (($contents['created']['date-parts'] ?? []) as $date_parts) {
+      $field_date_issued[] = ['value' => implode('-', $date_parts)];
     }
-    $new_node->set('field_edtf_date_issued', $field_edtf_date_issued);
+    $new_node->set('field_date_issued', $field_date_issued);
 
-    $field_issn = [];
-    foreach ($contents['ISSN'] as $issn) {
-      $field_issn[] = ['value' => $issn];
+    $field_series_issn = [];
+    foreach (($contents['ISSN'] ?? []) as $issn) {
+      $field_series_issn[] = ['value' => $issn];
     }
-    $new_node->set('field_issn', $field_issn);
+    $new_node->set('field_series_issn', $field_series_issn);
     $new_node->save();
     if ($form_state->getValue('redirect') == 'edit') {
-
       $destination = "/node/{$new_node->id()}/edit";
       $response = new RedirectResponse($destination);
       $response->send();
