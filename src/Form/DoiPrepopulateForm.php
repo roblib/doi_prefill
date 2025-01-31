@@ -150,7 +150,7 @@ final class DoiPrepopulateForm extends FormBase {
       'title' => $contents['title'][0],
       'field_member_of' => $collection,
       'type' => 'islandora_object',
-      'field_contributor' => $typed_relations,
+      'field_contributors' => $typed_relations,
       'field_publisher' => $contents['publisher'] ?? '',
       'field_doi' => $doi,
       'field_genre' => $genre->id(),
