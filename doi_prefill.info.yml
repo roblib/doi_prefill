@@ -1,0 +1,8 @@
+name: 'DOI Prefill'
+type: module
+description: 'Generates Link to Prepopulate DOI ingest form'
+package: Custom
+core_version_requirement: ^10 || ^11
+dependencies:
+  - islandora:islandora
+  - prepopulate:prepopulate

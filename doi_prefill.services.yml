@@ -1,0 +1,4 @@
+services:
+  doi_prefill.crossref_api_reader:
+    class: Drupal\doi_prefill\CrossrefApiReader
+    arguments: ['@http_client', '@logger.channel.islandora', '@config.factory']

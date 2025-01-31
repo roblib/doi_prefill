@@ -1,0 +1,7 @@
+doi_prefill.doi_prepopulate:
+  path: '/doi-prefill/doi-prepopulate'
+  defaults:
+    _title: 'Doi Prepopulate'
+    _form: 'Drupal\doi_prefill\Form\DoiPrepopulateForm'
+  requirements:
+    _permission: 'create islandora_object content'
