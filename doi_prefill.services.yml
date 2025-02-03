@@ -2,3 +2,7 @@ services:
   doi_prefill.crossref_api_reader:
     class: Drupal\doi_prefill\CrossrefApiReader
     arguments: ['@http_client', '@logger.channel.islandora', '@config.factory']
+
+  doi_prefill.node_builder:
+    class: Drupal\doi_prefill\NodeBuilder
+    arguments: ['@entity_type.manager', '@doi_prefill.crossref_api_reader']
