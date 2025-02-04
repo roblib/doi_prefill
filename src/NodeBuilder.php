@@ -90,6 +90,9 @@ final class NodeBuilder {
       }
       $new_node->set('field_date_online', $field_date_online);
     }
+    if (isset($contents['page'])) {
+      $new_node->set('field_page_range', $contents['page']);
+    }
 
     // Multivalued fields.
     $field_date_issued = [];
