@@ -75,6 +75,23 @@ final class DoiPrepopulateForm extends FormBase {
   /**
    * {@inheritdoc}
    */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    parent::validateForm($form, $form_state);
+    $doi = trim($form_state->getValue('doi'));
+    if (!empty($doi)) {
+      $existing_nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties([
+        'field_doi' => $doi,
+      ]);
+
+      if (!empty($existing_nodes)) {
+        $form_state->setErrorByName('doi', $this->t('A node with this DOI already exists.'));
+      }
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function buildForm(array $form, FormStateInterface $form_state): array {
     $terms = $this->entityTypeManager->getStorage('taxonomy_term')->loadByProperties([
       'name' => 'Collection',
@@ -134,6 +151,10 @@ final class DoiPrepopulateForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state): void {
     $doi = trim($form_state->getValue('doi'));
+    $existing_nodes = $this->entityTypeManager->getStorage('node')->loadByProperties([
+      'field_doi' => $doi,
+    ]);
+
     $collection = $form_state->getValue('collection');
     $nid = $this->nodeBuilder->buildNode($collection, $doi);
 
