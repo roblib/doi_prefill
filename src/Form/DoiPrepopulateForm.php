@@ -45,6 +45,8 @@ final class DoiPrepopulateForm extends FormBase {
    *   The Api reader.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The EntityTypeManager.
+   * @param Drupal\doi_prefill\NodeBuilder $nodeBuilder
+   *   The NodeBuilder.
    */
   public function __construct(CrossrefApiReader $doiApi, EntityTypeManagerInterface $entityTypeManager, NodeBuilder $nodeBuilder) {
     $this->doiApi = $doiApi;
@@ -79,7 +81,7 @@ final class DoiPrepopulateForm extends FormBase {
     parent::validateForm($form, $form_state);
     $doi = trim($form_state->getValue('doi'));
     if (!empty($doi)) {
-      $existing_nodes = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties([
+      $existing_nodes = $this->entityTypeManager->getStorage('node')->loadByProperties([
         'field_doi' => $doi,
       ]);
 
@@ -151,10 +153,6 @@ final class DoiPrepopulateForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state): void {
     $doi = trim($form_state->getValue('doi'));
-    $existing_nodes = $this->entityTypeManager->getStorage('node')->loadByProperties([
-      'field_doi' => $doi,
-    ]);
-
     $collection = $form_state->getValue('collection');
     $nid = $this->nodeBuilder->buildNode($collection, $doi);
 

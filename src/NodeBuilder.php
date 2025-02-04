@@ -61,7 +61,8 @@ final class NodeBuilder {
         'rel_type' => 'relators:aut',
       ];
     }
-    $genre = $this->getOrCreateTerm($contents['type'], 'genre');
+    $type = $this->mapping[$contents['type']] ?? $contents['type'];
+    $genre = $this->getOrCreateTerm($type, 'genre');
 
     // Build new node.
     $new_node = Node::create([
@@ -74,6 +75,7 @@ final class NodeBuilder {
       'field_genre' => $genre->id(),
       'field_issue' => $contents['issue'] ?? '',
       'field_volume' => $contents['volume'] ?? '',
+      'field_date_issued' => $contents['created']['date-parts'][0][0] ?? '',
     ]);
 
     // Optional fields.
@@ -82,6 +84,9 @@ final class NodeBuilder {
         'value' => $contents['abstract'],
         'format' => 'basic_html',
       ]);
+    }
+    if (isset($contents['container-title'])) {
+      $new_node->set('field_host_title', $contents['container-title'][0]);
     }
     if (isset($contents['published-online'])) {
       $field_date_online = [];
@@ -95,12 +100,6 @@ final class NodeBuilder {
     }
 
     // Multivalued fields.
-    $field_date_issued = [];
-    foreach (($contents['created']['date-parts'] ?? []) as $date_parts) {
-      $field_date_issued[] = ['value' => implode('-', $date_parts)];
-    }
-    $new_node->set('field_date_issued', $field_date_issued);
-
     $field_series_issn = [];
     foreach (($contents['ISSN'] ?? []) as $issn) {
       $field_series_issn[] = ['value' => $issn];
