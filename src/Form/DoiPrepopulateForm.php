@@ -11,6 +11,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\doi_prefill\CrossrefApiReader;
 use Drupal\doi_prefill\NodeBuilder;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\Core\Render\Markup;
 
 /**
  * Provides a DOI Prefill form.
@@ -86,7 +87,14 @@ final class DoiPrepopulateForm extends FormBase {
       ]);
 
       if (!empty($existing_nodes)) {
-        $form_state->setErrorByName('doi', $this->t('A node with this DOI already exists.'));
+        $tags = [];
+        foreach ($existing_nodes as $node) {
+          $tags[] = "<a href='{$node->toUrl()->toString()}'>{$doi}</a>";
+        }
+        $message = $this->t("DOI already exists in the system.");
+        $links = implode("<br />", $tags);
+        $message = "{$message}<br />{$links}";
+        $form_state->setErrorByName('doi', Markup::create($message));
       }
     }
   }
