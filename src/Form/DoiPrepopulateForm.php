@@ -64,7 +64,7 @@ final class DoiPrepopulateForm extends FormBase {
       // Load the service required to construct this class.
       $container->get('doi_prefill.crossref_api_reader'),
       $container->get('entity_type.manager'),
-      $container->get('doi_prefill.node_builder')
+      $container->get('doi_prefill.node_builder'),
     );
   }
 

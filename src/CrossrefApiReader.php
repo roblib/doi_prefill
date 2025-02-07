@@ -32,7 +32,6 @@ final class CrossrefApiReader {
     $endpoint = 'https://api.crossref.org/works';
     $encoded_doi = urlencode($identifier);
     $url = "{$endpoint}/{$encoded_doi}";
-
     try {
       $response = $this->httpClient->get($url, [
         'headers' => [

@@ -7,6 +7,7 @@ namespace Drupal\doi_prefill;
 use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
+use Drupal\Core\Config\ConfigFactory;
 
 /**
  * Class to construct nodes from crossref DOI harvest.
@@ -14,23 +15,12 @@ use Drupal\taxonomy\Entity\Term;
 final class NodeBuilder {
 
   /**
-   * Mapping of content types to their respective classes.
-   *
-   * @var arraystringstring
-   */
-  protected $mapping = [
-    'journal-article' => 'Journal Article',
-    'book-chapter' => 'Book, Section',
-    'monograph' => 'Book',
-    'proceedings-article' => 'Conference Proceedings',
-  ];
-
-  /**
    * Constructs a CrossrefApiReader object.
    */
   public function __construct(
     private readonly EntityTypeManager $entityTypeManager,
     private readonly CrossrefApiReader $doiApi,
+    private readonly ConfigFactory $config
   ) {}
 
   /**
@@ -46,6 +36,13 @@ final class NodeBuilder {
    */
   public function buildNode($collection, $doi) {
     $contents = $this->doiApi->getWork($doi);
+    $config = $this->config->get('doi_prefill.settings');
+    $field_settings = $config->get('field_settings');
+    $mapping = $config->get('doi_term_islandora_term_pairs');
+    $term_mappings = [];
+    foreach ($mapping as $mapping => $values) {
+      $term_mappings[$values['key']] = $values['value'];
+    }
 
     // Build typed relations.
     $typed_relations = [];
@@ -61,42 +58,42 @@ final class NodeBuilder {
         'rel_type' => 'relators:aut',
       ];
     }
-    $type = $this->mapping[$contents['type']] ?? $contents['type'];
+    $type = $term_mappings[$contents['type']] ?? $contents['type'];
     $genre = $this->getOrCreateTerm($type, 'genre');
 
     // Build new node.
     $new_node = Node::create([
-      'title' => $contents['title'][0],
+      $field_settings['title'] => $contents['title'][0],
       'field_member_of' => $collection,
-      'type' => 'islandora_object',
-      'field_contributors' => $typed_relations,
-      'field_publisher' => $contents['publisher'] ?? '',
-      'field_doi' => $doi,
-      'field_genre' => $genre->id(),
-      'field_issue' => $contents['issue'] ?? '',
-      'field_volume' => $contents['volume'] ?? '',
-      'field_date_issued' => $contents['created']['date-parts'][0][0] ?? '',
+      'type' => $config->get('content_type'),
+      $field_settings['contributors'] => $typed_relations,
+      $field_settings['publisher'] => $contents['publisher'] ?? '',
+      $field_settings['doi'] => $doi,
+      $field_settings['genre'] => $genre->id(),
+      $field_settings['issue'] => $contents['issue'] ?? '',
+      $field_settings['volume'] => $contents['volume'] ?? '',
+      $field_settings['date_issued'] => $contents['created']['date-parts'][0][0] ?? '',
     ]);
 
     // Optional fields.
     if (isset($contents['abstract'])) {
-      $new_node->set('field_abstract', [
+      $new_node->set($field_settings['abstract'], [
         'value' => $contents['abstract'],
         'format' => 'basic_html',
       ]);
     }
     if (isset($contents['container-title'])) {
-      $new_node->set('field_host_title', $contents['container-title'][0]);
+      $new_node->set($field_settings['host_title'], $contents['container-title'][0]);
     }
     if (isset($contents['published-online'])) {
       $field_date_online = [];
       foreach ($contents['published-online']['date-parts'] as $date_parts) {
         $field_date_online[] = ['value' => implode('-', $date_parts)];
       }
-      $new_node->set('field_date_online', $field_date_online);
+      $new_node->set($field_settings['date_online'], $field_date_online);
     }
     if (isset($contents['page'])) {
-      $new_node->set('field_page_range', $contents['page']);
+      $new_node->set($field_settings['page_range'], $contents['page']);
     }
 
     // Multivalued fields.
@@ -104,7 +101,7 @@ final class NodeBuilder {
     foreach (($contents['ISSN'] ?? []) as $issn) {
       $field_series_issn[] = ['value' => $issn];
     }
-    $new_node->set('field_series_issn', $field_series_issn);
+    $new_node->set($field_settings['series_issn'], $field_series_issn);
     $new_node->save();
 
     return $new_node->id();
@@ -126,20 +123,15 @@ final class NodeBuilder {
       'name' => $term_name,
       'vid' => $vocabulary,
     ]);
-
     if ($terms) {
-      // Return the first found term.
       return reset($terms);
     }
-
-    // If the term does not exist, create it.
     $term = Term::create([
       'name' => $term_name,
       'vid' => $vocabulary,
     ]);
     $term->save();
     return $term;
-
   }
 
 }

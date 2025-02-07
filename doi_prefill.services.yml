@@ -5,4 +5,4 @@ services:
 
   doi_prefill.node_builder:
     class: Drupal\doi_prefill\NodeBuilder
-    arguments: ['@entity_type.manager', '@doi_prefill.crossref_api_reader']
+    arguments: ['@entity_type.manager', '@doi_prefill.crossref_api_reader', '@config.factory']

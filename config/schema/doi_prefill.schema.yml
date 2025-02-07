@@ -1,0 +1,60 @@
+doi_prefill.settings:
+  type: config_object
+  label: 'DOI Prefill Settings'
+  mapping:
+    field_settings:
+      type: mapping
+      label: 'Field Mappings'
+      mapping:
+        title:
+          type: string
+          label: 'Title'
+        contributors:
+          type: string
+          label: 'Contributors'
+        publisher:
+          type: string
+          label: 'Publisher'
+        doi:
+          type: string
+          label: 'DOI'
+        genre:
+          type: string
+          label: 'Genre'
+        issue:
+          type: string
+          label: 'Issue'
+        volume:
+          type: string
+          label: 'Volume'
+        date_issued:
+          type: string
+          label: 'Date Issued'
+        abstract:
+          type: string
+          label: 'Abstract'
+        host_title:
+          type: string
+          label: 'Host Title'
+        date_online:
+          type: string
+          label: 'Date Online'
+        page_range:
+          type: string
+          label: 'Page Range'
+        series_issn:
+          type: string
+          label: 'Series ISSN'
+    doi_term_islandora_term_pairs:
+      type: sequence
+      label: 'DOI Term - Islandora Term Pairs'
+      sequence:
+        type: mapping
+        mapping:
+          key:
+            type: string
+            label: 'DOI Term'
+          value:
+            type: string
+            label: 'Islandora Term'
+

@@ -1,0 +1,20 @@
+field_settings:
+  title: 'title'
+  contributors: 'field_contributors'
+  publisher: 'field_publisher'
+  doi: 'field_doi'
+  genre: 'field_genre'
+  issue: 'field_issue'
+  volume: 'field_volume'
+  date_issued: 'field_edtf_date_issued'
+  abstract: 'field_abstract'
+  host_title: 'field_host_title'
+  date_online: 'field_date_online'
+  page_range: 'field_page_range'
+  series_issn: 'field_series_issn'
+doi_term_islandora_term_pairs:
+  - key: 'article-journal'
+    value: 'Journal Article'
+  - key: 'monograph'
+    value: 'Book'
+

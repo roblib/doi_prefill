@@ -5,3 +5,11 @@ doi_prefill.doi_prepopulate:
     _form: 'Drupal\doi_prefill\Form\DoiPrepopulateForm'
   requirements:
     _permission: 'create islandora_object content'
+
+doi_prefill.doi_settings:
+  path: '/admin/config/system/doi_field_settings'
+  defaults:
+    _title: 'DOI Prefill Settings'
+    _form: 'Drupal\doi_prefill\Form\DOIFieldSettingsForm'
+  requirements:
+    _permission: 'administer site configuration'
