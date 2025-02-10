@@ -1,0 +1,6 @@
+doi_prefill.doi_settings:
+  title: DOI Prefill Settings
+  description: Configure DOI mappings
+  parent: system.admin_config_system
+  route_name: doi_prefill.doi_settings
+  weight: 10
