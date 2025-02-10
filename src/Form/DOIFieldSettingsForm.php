@@ -158,14 +158,20 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
       '#type' => 'markup',
       '#markup' => $this->t('DOI genre terms are returned by Crossref.  Please choose any term you would like to replace from your own taxonomy.'),
     ];
+    $initial_pair = [
+      'key' => '',
+      'value' => '',
+      'unique_id' => 'initial',
+    ];
 
-    $doi_term_islandora_term_pairs = $form_state->get('doi_term_islandora_term_pairs');
-    if (!$doi_term_islandora_term_pairs) {
+    $doi_term_islandora_term_pairs = $form_state->get('doi_term_islandora_term_pairs', []);
+    $entry_count = $form_state->get('entry_count');
+    if (!$doi_term_islandora_term_pairs && $entry_count === NULL) {
       $doi_term_islandora_term_pairs = $config->get('doi_term_islandora_term_pairs');
     }
     if (empty($doi_term_islandora_term_pairs)) {
       // Initialize as an empty array if no pairs exist.
-      $doi_term_islandora_term_pairs = [];
+      $doi_term_islandora_term_pairs['initial'] = $initial_pair;
     }
 
     // Set the form state for entry_count and doi_term_islandora_term_pairs.
@@ -187,15 +193,13 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
       $form['doi_term_islandora_term_pairs'][$unique_id]['key'] = [
         '#type' => 'textfield',
         '#default_value' => $pair['key'] ?? '',
-        '#title' => $this->t('term from DOI'),
-        '#required' => TRUE,
+        '#placeholder' => $this->t('Term from DOI'),
       ];
 
       $form['doi_term_islandora_term_pairs'][$unique_id]['value'] = [
         '#type' => 'textfield',
         '#default_value' => $pair['value'] ?? '',
-        '#title' => $this->t('Genre term'),
-        '#required' => TRUE,
+        '#placeholder' => $this->t('Genre term'),
       ];
 
       // Hidden field to store the correct entry ID.
@@ -230,13 +234,6 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
         'wrapper' => 'key-value-pairs-wrapper',
       ],
     ];
-
-    // Submit button for the form.
-    $form['submit'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Save term mappings'),
-    ];
-
     return parent::buildForm($form, $form_state);
   }
 
@@ -316,6 +313,7 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
     if (isset($doi_term_islandora_term_pairs[$clicked_id])) {
       unset($doi_term_islandora_term_pairs[$clicked_id]);
     }
+    $count = count($doi_term_islandora_term_pairs);
     $form_state->set('doi_term_islandora_term_pairs', $doi_term_islandora_term_pairs);
     $form_state->set('entry_count', count($doi_term_islandora_term_pairs));
     $form_state->setRebuild();
