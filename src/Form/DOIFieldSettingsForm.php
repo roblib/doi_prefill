@@ -167,7 +167,11 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
     if (!$doi_term_islandora_term_pairs && $entry_count === NULL) {
       $doi_term_islandora_term_pairs = $config->get('doi_term_islandora_term_pairs');
     }
-    if (empty($doi_term_islandora_term_pairs)) {
+    $blank = array_keys(array_filter($doi_term_islandora_term_pairs, function ($subarray) {
+      return isset($subarray['value']) && $subarray['value'] === '';
+    }));
+
+    if (empty($doi_term_islandora_term_pairs) || empty($blank)) {
       // Initialize as an empty array if no pairs exist.
       $new_id = uniqid();
       $doi_term_islandora_term_pairs[$new_id] = [
