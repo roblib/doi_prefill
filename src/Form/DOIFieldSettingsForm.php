@@ -45,7 +45,9 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager service.
    * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entityFieldManager
-   *   THe field manager.
+   *   The field manager.
+   * @param \Drupal\islandora\IslandoraUtils $utils
+   *   Islandora utils service.
    */
   public function __construct(EntityTypeManagerInterface $entityTypeManager, EntityFieldManagerInterface $entityFieldManager, IslandoraUtils $utils) {
     $this->entityTypeManager = $entityTypeManager;
@@ -156,12 +158,8 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
 
     $form['pairs_description'] = [
       '#type' => 'markup',
-      '#markup' => $this->t('DOI genre terms are returned by Crossref.  Please choose any term you would like to replace from your own taxonomy.'),
-    ];
-    $initial_pair = [
-      'key' => '',
-      'value' => '',
-      'unique_id' => 'initial',
+      '#markup' => $this->t('DOI genre terms are returned by Crossref.  Please choose any term you would like to replace from your own taxonomy.<br /><strong>Note:</strong> any unpaired terms coming from Crossref will be left blank.'),
+      '#allowed_tags' => ['br', 'strong'],
     ];
 
     $doi_term_islandora_term_pairs = $form_state->get('doi_term_islandora_term_pairs', []);
@@ -171,9 +169,13 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
     }
     if (empty($doi_term_islandora_term_pairs)) {
       // Initialize as an empty array if no pairs exist.
-      $doi_term_islandora_term_pairs['initial'] = $initial_pair;
+      $new_id = uniqid();
+      $doi_term_islandora_term_pairs[$new_id] = [
+        'key' => '',
+        'value' => '',
+        'entry_id' => $new_id,
+      ];
     }
-
     // Set the form state for entry_count and doi_term_islandora_term_pairs.
     $form_state->set('doi_term_islandora_term_pairs', $doi_term_islandora_term_pairs);
     $entry_count = count($doi_term_islandora_term_pairs);
@@ -184,6 +186,11 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
       '#type' => 'table',
       '#prefix' => '<div id="key-value-pairs-wrapper">',
       '#suffix' => '</div>',
+      '#header' => [
+        $this->t('DOI term'),
+        $this->t('Genre term'),
+        $this->t('Action'),
+      ],
     ];
 
     // Generate the table rows dynamically based on stored pairs.
@@ -209,31 +216,33 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
       ];
 
       // Remove button for each entry.
-      $form['doi_term_islandora_term_pairs'][$unique_id]['remove'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Remove'),
-        '#submit' => ['::removeCallback'],
-        '#limit_validation_errors' => [],
-        '#ajax' => [
-          'callback' => '::ajaxCallback',
-          'wrapper' => 'key-value-pairs-wrapper',
-        ],
-        // Instead of relying on `#attributes`, set a unique `#name`!
-        '#name' => 'remove_' . $unique_id,
-      ];
-
+      if ($pair['key'] && $pair['value']) {
+        $form['doi_term_islandora_term_pairs'][$unique_id]['remove'] = [
+          '#type' => 'submit',
+          '#value' => $this->t('Remove'),
+          '#submit' => ['::removeCallback'],
+          '#limit_validation_errors' => [],
+          '#ajax' => [
+            'callback' => '::ajaxCallback',
+            'wrapper' => 'key-value-pairs-wrapper',
+          ],
+          // Instead of relying on `#attributes`, set a unique `#name`!
+          '#name' => 'remove_' . $unique_id,
+        ];
+      }
+      else {
+        $form['doi_term_islandora_term_pairs'][$unique_id]['add_more'] = [
+          '#type' => 'submit',
+          '#value' => $this->t('Add term'),
+          '#submit' => ['::addMoreCallback'],
+          '#ajax' => [
+            'callback' => '::ajaxCallback',
+            'wrapper' => 'key-value-pairs-wrapper',
+          ],
+        ];
+      }
     }
 
-    // Button to add another key-value pair.
-    $form['add_more'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Add term'),
-      '#submit' => ['::addMoreCallback'],
-      '#ajax' => [
-        'callback' => '::ajaxCallback',
-        'wrapper' => 'key-value-pairs-wrapper',
-      ],
-    ];
     return parent::buildForm($form, $form_state);
   }
 
@@ -268,26 +277,32 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
    */
   public function addMoreCallback(array &$form, FormStateInterface $form_state) {
     // Retrieve existing key-value pairs.
-    $doi_term_islandora_term_pairs = $form_state->get('doi_term_islandora_term_pairs') ?? [];
-
+    // $doi_term_islandora_term_pairs = $form_state->get('doi_term_islandora_term_pairs') ?? [];.
     // Get submitted values and merge with stored ones.
     $user_input = $form_state->getUserInput();
     if (!empty($user_input['doi_term_islandora_term_pairs'])) {
       foreach ($user_input['doi_term_islandora_term_pairs'] as $id => $values) {
-        if (!isset($doi_term_islandora_term_pairs[$id])) {
+        if ($values['key'] && $values['value']) {
           $doi_term_islandora_term_pairs[$id] = $values;
         }
       }
     }
-
-    // Add a new empty entry with a unique ID.
-    $unique_id = uniqid();
-    $doi_term_islandora_term_pairs[$unique_id] = [
+    $fresh_id = uniqid();
+    $blank = [
       'key' => '',
       'value' => '',
-      'unique_id' => $unique_id,
+      'entry_id' => $fresh_id,
     ];
-
+    $unique_id = uniqid();
+    if (isset($doi_term_islandora_term_pairs['initial'])) {
+      $new = [
+        $unique_id => $doi_term_islandora_term_pairs['initial'],
+      ];
+      unset($doi_term_islandora_term_pairs['initial']);
+      $doi_term_islandora_term_pairs[$unique_id] = $new[$unique_id];
+      $doi_term_islandora_term_pairs[$unique_id]['entry_id'] = $unique_id;
+    }
+    $doi_term_islandora_term_pairs[$fresh_id] = $blank;
     // Store the updated values.
     $form_state->set('doi_term_islandora_term_pairs', $doi_term_islandora_term_pairs);
     $form_state->set('entry_count', count($doi_term_islandora_term_pairs));
@@ -313,7 +328,6 @@ final class DOIFieldSettingsForm extends ConfigFormBase {
     if (isset($doi_term_islandora_term_pairs[$clicked_id])) {
       unset($doi_term_islandora_term_pairs[$clicked_id]);
     }
-    $count = count($doi_term_islandora_term_pairs);
     $form_state->set('doi_term_islandora_term_pairs', $doi_term_islandora_term_pairs);
     $form_state->set('entry_count', count($doi_term_islandora_term_pairs));
     $form_state->setRebuild();

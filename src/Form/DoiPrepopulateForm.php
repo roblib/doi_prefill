@@ -117,7 +117,11 @@ final class DoiPrepopulateForm extends FormBase {
     foreach ($collections as $id => $collection) {
       $options[$id] = $collection->label();
     }
-
+    $form['overview'] = [
+      '#type' => 'markup',
+      '#markup' => $this->t('Enter <strong>DOI</strong> to prepopulate a new Drupal node with values from Crossref.<br /><strong>Note:</strong> The new node will be in an unpublished state.'),
+      '#allowed_tags' => ['br', 'strong'],
+    ];
     $form['container'] = [
       '#type' => 'container',
       '#attributes' => ['class' => ['form-inline']],
@@ -135,7 +139,7 @@ final class DoiPrepopulateForm extends FormBase {
 
     ];
     $form['container']['redirect'] = [
-      '#type' => 'select',
+      '#type' => 'hidden',
       '#title' => $this->t("After submission?"),
       '#options' => [
         'edit' => $this->t('Edit after submission'),

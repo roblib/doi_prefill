@@ -73,6 +73,7 @@ final class NodeBuilder {
       $field_settings['issue'] => $contents['issue'] ?? '',
       $field_settings['volume'] => $contents['volume'] ?? '',
       $field_settings['date_issued'] => $contents['created']['date-parts'][0][0] ?? '',
+      'status' => 0,
     ]);
 
     // Optional fields.
