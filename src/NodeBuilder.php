@@ -89,6 +89,9 @@ final class NodeBuilder {
     if (isset($contents['published-online'])) {
       $field_date_online = [];
       foreach ($contents['published-online']['date-parts'] as $date_parts) {
+        foreach ($date_parts as &$date_part) {
+          $date_part = str_pad((string)$date_part, 2, "0", STR_PAD_LEFT);
+        }
         $field_date_online[] = ['value' => implode('-', $date_parts)];
       }
       $new_node->set($field_settings['date_online'], $field_date_online);
