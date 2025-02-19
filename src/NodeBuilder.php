@@ -63,7 +63,7 @@ final class NodeBuilder {
 
     // Build new node.
     $new_node = Node::create([
-      $field_settings['title'] => $contents['title'][0],
+      $field_settings['title'] => htmlspecialchars_decode($contents['title'][0]),
       'field_member_of' => $collection,
       'type' => $config->get('content_type'),
       $field_settings['contributors'] => $typed_relations,
@@ -84,7 +84,7 @@ final class NodeBuilder {
       ]);
     }
     if (isset($contents['container-title'])) {
-      $new_node->set($field_settings['host_title'], $contents['container-title'][0]);
+      $new_node->set($field_settings['host_title'], htmlspecialchars_decode($contents['container-title'][0]));
     }
     if (isset($contents['published-online'])) {
       $field_date_online = [];
