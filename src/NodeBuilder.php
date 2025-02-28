@@ -59,12 +59,15 @@ final class NodeBuilder {
       ];
     }
     $genre = $term_mappings[$contents['type']] ?? NULL;
-    $terms = $this->entityTypeManager->getStorage('taxonomy_term')->loadByProperties([
-      'name' => $genre,
-      'vid' => 'genre',
-    ]);
-    if ($terms) {
-      $genre = reset($terms);
+    if ($genre) {
+      $terms = $this->entityTypeManager->getStorage('taxonomy_term')->loadByProperties([
+        'name' => $genre,
+        'vid' => 'genre',
+      ]);
+      if ($terms) {
+        $genre = reset($terms);
+      }
+
     }
 
     // Build new node.
@@ -75,7 +78,6 @@ final class NodeBuilder {
       $field_settings['contributors'] => $typed_relations,
       $field_settings['publisher'] => $contents['publisher'] ?? '',
       $field_settings['doi'] => $doi,
-      $field_settings['genre'] => $genre->id(),
       $field_settings['issue'] => $contents['issue'] ?? '',
       $field_settings['volume'] => $contents['volume'] ?? '',
       $field_settings['date_issued'] => $contents['created']['date-parts'][0][0] ?? '',
