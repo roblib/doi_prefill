@@ -36,7 +36,6 @@ final class CrossrefApiReader {
       $response = $this->httpClient->get($url, [
         'headers' => [
           'accept' => 'application/json',
-          'User-Agent' => 'YourProjectName/1.0 (mailto:your-email@example.com)',
           'User-Agent' => "IslandScholar/ (mailto:{$site_email})",
         ],
       ]);
