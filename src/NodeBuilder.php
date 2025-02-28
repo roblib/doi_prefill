@@ -58,8 +58,14 @@ final class NodeBuilder {
         'rel_type' => 'relators:aut',
       ];
     }
-    $type = $term_mappings[$contents['type']] ?? $contents['type'];
-    $genre = $this->getOrCreateTerm($type, 'genre');
+    $genre = $term_mappings[$contents['type']] ?? NULL;
+    $terms = $this->entityTypeManager->getStorage('taxonomy_term')->loadByProperties([
+      'name' => $genre,
+      'vid' => 'genre',
+    ]);
+    if ($terms) {
+      $genre = reset($terms);
+    }
 
     // Build new node.
     $new_node = Node::create([
@@ -77,6 +83,9 @@ final class NodeBuilder {
     ]);
 
     // Optional fields.
+    if ($genre) {
+      $new_node->set($field_settings['genre'], $genre->id());
+    }
     if (isset($contents['abstract'])) {
       $new_node->set($field_settings['abstract'], [
         'value' => $contents['abstract'],
@@ -90,7 +99,7 @@ final class NodeBuilder {
       $field_date_online = [];
       foreach ($contents['published-online']['date-parts'] as $date_parts) {
         foreach ($date_parts as &$date_part) {
-          $date_part = str_pad((string)$date_part, 2, "0", STR_PAD_LEFT);
+          $date_part = str_pad((string) $date_part, 2, "0", STR_PAD_LEFT);
         }
         $field_date_online[] = ['value' => implode('-', $date_parts)];
       }
