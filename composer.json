@@ -1,0 +1,11 @@
+{
+    "name": "roblib/doi_prefill",
+    "type": "drupal-custom-module",
+    "description": "Prefills DOI form from Crossref API.",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "drupal/islandora": "^2.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
