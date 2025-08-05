@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Config\ConfigFactory;
+use Drupal\taxonomy\Entity\Vocabulary;
 
 /**
  * Class to construct nodes from crossref DOI harvest.
@@ -60,14 +61,16 @@ final class NodeBuilder {
     }
     $genre = $term_mappings[$contents['type']] ?? NULL;
     if ($genre) {
-      $terms = $this->entityTypeManager->getStorage('taxonomy_term')->loadByProperties([
-        'name' => $genre,
-        'vid' => 'genre',
-      ]);
+      $vocabulary = $this->get_allowed_vocabularies('node', $config->get('content_type'), $field_settings['genre']);
+      $vid = reset($vocabulary);
+      $terms = $this->entityTypeManager->getStorage('taxonomy_term')
+        ->loadByProperties([
+          'name' => $genre,
+          'vid' => $vid,
+        ]);
       if ($terms) {
         $genre = reset($terms);
       }
-
     }
 
     // Build new node.
@@ -134,10 +137,11 @@ final class NodeBuilder {
    *   The term entity if found or created, or NULL on failure.
    */
   public function getOrCreateTerm($term_name, $vocabulary) {
-    $terms = $this->entityTypeManager->getStorage('taxonomy_term')->loadByProperties([
-      'name' => $term_name,
-      'vid' => $vocabulary,
-    ]);
+    $terms = $this->entityTypeManager->getStorage('taxonomy_term')
+      ->loadByProperties([
+        'name' => $term_name,
+        'vid' => $vocabulary,
+      ]);
     if ($terms) {
       return reset($terms);
     }
@@ -147,6 +151,35 @@ final class NodeBuilder {
     ]);
     $term->save();
     return $term;
+  }
+
+  /**
+   * Get allowed vocabularies for a taxonomy term reference field.
+   *
+   * @param string $entity_type
+   *   The entity type (e.g., 'node').
+   * @param string $bundle
+   *   The bundle (content type machine name).
+   * @param string $field_name
+   *   The machine name of the taxonomy term reference field.
+   *
+   * @return string[]
+   *   Array of allowed vocabulary IDs.
+   */
+  function get_allowed_vocabularies($entity_type, $bundle, $field_name) {
+    $config = $this->config->get('doi_prefill.settings');
+    $field_config = $this->entityTypeManager
+      ->getStorage('field_config')
+      ->load($entity_type . '.' . $bundle . '.' . $field_name);
+
+    if ($field_config) {
+      $settings = $field_config->getSettings();
+      if (isset($settings['handler_settings']['target_bundles'])) {
+        return array_keys($settings['handler_settings']['target_bundles']);
+      }
+    }
+
+    return [];
   }
 
 }
