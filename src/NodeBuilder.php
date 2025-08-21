@@ -37,6 +37,9 @@ final class NodeBuilder {
    */
   public function buildNode($collection, $doi) {
     $contents = $this->doiApi->getWork($doi);
+    if (!$contents) {
+      return [];
+    }
     $config = $this->config->get('doi_prefill.settings');
     $field_settings = $config->get('field_settings');
     $mapping = $config->get('doi_term_islandora_term_pairs');
@@ -47,7 +50,7 @@ final class NodeBuilder {
 
     // Build typed relations.
     $typed_relations = [];
-    $vid = 'person';
+    $vid = 'coar_resource_types';
     foreach ($contents['author'] as $author) {
       $author_term = "{$author['family']}";
       if (isset($author['given'])) {

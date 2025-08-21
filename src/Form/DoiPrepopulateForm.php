@@ -12,7 +12,7 @@ use Drupal\doi_prefill\CrossrefApiReader;
 use Drupal\doi_prefill\NodeBuilder;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\Core\Render\Markup;
-
+use Drupal\Core\Messenger\MessengerInterface;
 /**
  * Provides a DOI Prefill form.
  */
@@ -40,6 +40,13 @@ final class DoiPrepopulateForm extends FormBase {
   protected $entityTypeManager;
 
   /**
+   * The messenger service.
+   *
+   * @var \Drupal\Core\Messenger\MessengerInterface
+   */
+  protected $messenger;
+
+  /**
    * The constructor.
    *
    * @param \Drupal\doi_prefill\CrossrefApiReader $doiApi
@@ -49,10 +56,11 @@ final class DoiPrepopulateForm extends FormBase {
    * @param Drupal\doi_prefill\NodeBuilder $nodeBuilder
    *   The NodeBuilder.
    */
-  public function __construct(CrossrefApiReader $doiApi, EntityTypeManagerInterface $entityTypeManager, NodeBuilder $nodeBuilder) {
+  public function __construct(CrossrefApiReader $doiApi, EntityTypeManagerInterface $entityTypeManager, NodeBuilder $nodeBuilder, MessengerInterface $messenger) {
     $this->doiApi = $doiApi;
     $this->entityTypeManager = $entityTypeManager;
     $this->nodeBuilder = $nodeBuilder;
+    $this->messenger = $messenger;
   }
 
   /**
@@ -65,6 +73,7 @@ final class DoiPrepopulateForm extends FormBase {
       $container->get('doi_prefill.crossref_api_reader'),
       $container->get('entity_type.manager'),
       $container->get('doi_prefill.node_builder'),
+      $container->get('messenger'),
     );
   }
 
@@ -167,8 +176,10 @@ final class DoiPrepopulateForm extends FormBase {
     $doi = trim($form_state->getValue('doi'));
     $collection = $form_state->getValue('collection');
     $nid = $this->nodeBuilder->buildNode($collection, $doi);
-
-    if ($form_state->getValue('redirect') == 'edit') {
+    if (empty($nid)) {
+      $this->messenger->addWarning($this->t('Crossref returned no information.'));
+    }
+    else {
       $destination = "/node/{$nid}/edit";
       $response = new RedirectResponse($destination);
       $response->send();
