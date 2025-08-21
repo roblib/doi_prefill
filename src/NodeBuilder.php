@@ -9,6 +9,7 @@ use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\taxonomy\Entity\Vocabulary;
+use Drupal\views\Views;
 
 /**
  * Class to construct nodes from crossref DOI harvest.
@@ -157,28 +158,46 @@ final class NodeBuilder {
   }
 
   /**
-   * Get allowed vocabularies for a taxonomy term reference field.
+   * Get allowed taxonomy vocabularies for a taxonomy reference field.
    *
    * @param string $entity_type
    *   The entity type (e.g., 'node').
    * @param string $bundle
-   *   The bundle (content type machine name).
+   *   The bundle (e.g., 'article').
    * @param string $field_name
-   *   The machine name of the taxonomy term reference field.
+   *   The field machine name (e.g., 'field_tags').
    *
-   * @return string[]
-   *   Array of allowed vocabulary IDs.
+   * @return array
+   *   An array of allowed vocabulary IDs (vids).
    */
-  function get_allowed_vocabularies($entity_type, $bundle, $field_name) {
-    $config = $this->config->get('doi_prefill.settings');
+  public function get_allowed_vocabularies($entity_type, $bundle, $field_name) {
     $field_config = $this->entityTypeManager
       ->getStorage('field_config')
       ->load($entity_type . '.' . $bundle . '.' . $field_name);
 
-    if ($field_config) {
-      $settings = $field_config->getSettings();
-      if (isset($settings['handler_settings']['target_bundles'])) {
+    if (!$field_config) {
+      return [];
+    }
+
+    $settings = $field_config->getSettings();
+    $handler = $settings['handler'];
+
+    if (strpos($handler, 'default:') === 0) {
+      if (!empty($settings['handler_settings']['target_bundles'])) {
         return array_keys($settings['handler_settings']['target_bundles']);
+      }
+    }
+
+    if ($handler === 'views' && !empty($settings['handler_settings']['view']['view_name'])) {
+      $view = Views::getView($settings['handler_settings']['view']['view_name']);
+      if ($view) {
+        $display = $settings['handler_settings']['view']['display_name'];
+        $view->setDisplay($display);
+
+        $filters = $view->getDisplay()->getOption('filters');
+        if (!empty($filters['vid']['value'])) {
+          return $filters['vid']['value']; // array of vids
+        }
       }
     }
 
